@@ -1,0 +1,15 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio files
+.vs/
+*.user
+
+# Solution file
+*.slnx
+
+# Publish output
+publish/
+*.pubxml
+*.pubxml.user
