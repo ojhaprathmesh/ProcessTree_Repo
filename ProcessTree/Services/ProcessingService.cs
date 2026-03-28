@@ -5,15 +5,10 @@ using ProcessTree.Models.ViewModels;
 
 namespace ProcessTree.Services
 {
-    public class ProcessingService : IProcessingService
+    public class ProcessingService(AppDbContext db) : IProcessingService
     {
-        private readonly AppDbContext _db;
+        private readonly AppDbContext _db = db;
         private const int MaxDepth = 10;
-
-        public ProcessingService(AppDbContext db)
-        {
-            _db = db;
-        }
 
         public async Task<List<ProcessItem>> GetAllRootItemsAsync()
         {

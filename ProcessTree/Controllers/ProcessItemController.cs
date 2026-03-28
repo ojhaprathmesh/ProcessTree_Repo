@@ -4,18 +4,12 @@ using ProcessTree.Services;
 
 namespace ProcessTree.Controllers
 {
-    public class ProcessItemController : Controller
+    public class ProcessItemController(
+        IProcessingService service,
+        ILogger<ProcessItemController> logger) : Controller
     {
-        private readonly IProcessingService _service;
-        private readonly ILogger<ProcessItemController> _logger;
-
-        public ProcessItemController(
-            IProcessingService service, 
-            ILogger<ProcessItemController> logger)
-        {
-            _service = service;
-            _logger = logger;
-        }
+        private readonly IProcessingService _service = service;
+        private readonly ILogger<ProcessItemController> _logger = logger;
 
         // GET: /ProcessItem
         public async Task<IActionResult> Index()
