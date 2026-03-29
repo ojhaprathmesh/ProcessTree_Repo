@@ -1,0 +1,107 @@
+@model ProcessTree.Models.ProcessItem
+
+@{
+    ViewData["Title"] = "Item Details";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Item Details</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">ID</dt>
+                        <dd class="col-sm-8">#@Model.Id</dd>
+
+                        <dt class="col-sm-4">Name</dt>
+                        <dd class="col-sm-8">@Model.Name</dd>
+
+                        <dt class="col-sm-4">Weight</dt>
+                        <dd class="col-sm-8">@Model.Weight.ToString("F2") kg</dd>
+
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.IsProcessed)
+                            {
+                                <span class="badge bg-success">Processed</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">
+                                    Unprocessed
+                                </span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Parent</dt>
+                        <dd class="col-sm-8">
+                            @(Model.ParentId.HasValue
+                                ? $"Item #{Model.ParentId}"
+                                : "None (root item)")
+                        </dd>
+
+                        <dt class="col-sm-4">Created</dt>
+                        <dd class="col-sm-8">
+                            @Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                        </dd>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Notes))
+                        {
+                            <dt class="col-sm-4">Notes</dt>
+                            <dd class="col-sm-8">@Model.Notes</dd>
+                        }
+                    </dl>
+
+                    <div class="d-flex gap-2 mt-2">
+                        @if (!Model.IsProcessed)
+                        {
+                            <a asp-action="Process" asp-route-id="@Model.Id" class="btn btn-primary btn-sm">▶ Process</a>
+                        }
+                        <a asp-action="Tree" asp-route-id="@Model.Id" class="btn btn-outline-info btn-sm">🌲 Tree</a>
+                        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">← Back</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Children.Any())
+        {
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="mb-0">Output Items (@Model.Children.Count)</h6>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        @foreach (var child in Model.Children)
+                        {
+                            <li class="list-group-item d-flex 
+                                justify-content-between align-items-center">
+                                <div>
+                                    <strong>@child.Name</strong>
+                                    <small class="text-muted ms-2">
+                                        @child.Weight.ToString("F2") kg
+                                    </small>
+                                </div>
+                                <div>
+                                    <a asp-action="Details" asp-route-id="@child.Id" class="btn btn-sm btn-outline-secondary">
+                                        View
+                                    </a>
+                                    @if (!child.IsProcessed)
+                                    {
+                                        <a asp-action="Process" asp-route-id="@child.Id"
+                                               class="btn btn-sm btn-outline-primary ms-1">
+                                            ▶
+                                        </a>
+                                    }
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+    </div>
+</div>

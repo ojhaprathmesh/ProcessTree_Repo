@@ -1,0 +1,59 @@
+@model ProcessTree.Models.ViewModels.ProcessItemViewModel
+
+@{
+    ViewData["Title"] = "Create New Item";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Create Root Item</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label"></label>
+                            <input asp-for="Name" class="form-control" placeholder="e.g., Raw Material Batch A" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Weight" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Weight" class="form-control" type="number" step="0.01" min="0.01"
+                                       placeholder="e.g., 150.00" />
+                                <span class="input-group-text">kg</span>
+                            </div>
+                            <span asp-validation-for="Weight" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Notes" class="form-label">
+                                Notes (optional)
+                            </label>
+                            <textarea asp-for="Notes" class="form-control" rows="2"
+                                      placeholder="Any extra info..."></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Create Item
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
