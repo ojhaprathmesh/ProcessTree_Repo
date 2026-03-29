@@ -1,0 +1,37 @@
+@model ProcessTree.Models.ViewModels.TreeNodeViewModel
+
+<ul>
+    <li>
+        <div class="tree-node @(Model.IsProcessed ? "processed" : "unprocessed")">
+
+            <div class="node-name">@Model.Name</div>
+
+            <div class="node-weight">⚖ @Model.Weight.ToString("F2") kg</div>
+
+            <div class="node-badge">
+                @if (Model.IsProcessed)
+                {
+                    <span class="badge bg-success">✓ Processed</span>
+                }
+                else
+                {
+                    <a asp-controller="ProcessItem" asp-action="Process" asp-route-id="@Model.Id"
+                           class="badge bg-warning text-dark text-decoration-none">
+                        ▶ Process
+                    </a>
+                }
+            </div>
+        </div>
+
+        @* Recursively render children if any exist *@
+        @if (Model.Children != null && Model.Children.Any())
+        {
+            <ul>
+                @foreach (var child in Model.Children)
+                {
+                    @await Html.PartialAsync("_TreeNode", child)
+                }
+            </ul>
+        }
+    </li>
+</ul>

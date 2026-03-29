@@ -1,0 +1,103 @@
+.tree-wrapper {
+  overflow-x: auto;
+  padding: 20px 10px;
+}
+
+.tree ul {
+  padding-top: 20px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
+.tree li {
+  list-style: none;
+  text-align: center;
+  position: relative;
+  padding: 20px 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Vertical line down from parent */
+.tree li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  border-left: 2px solid #adb5bd;
+  height: 20px;
+}
+
+/* Horizontal line across siblings */
+.tree ul li::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  border-top: 2px solid #adb5bd;
+}
+
+.tree ul li:last-child::after {
+  left: 0;
+  width: 50%;
+}
+
+.tree ul li:first-child::after {
+  left: 50%;
+  width: 50%;
+}
+
+/* Single child — no lines needed */
+.tree ul li:only-child::after,
+.tree ul li:only-child::before {
+  display: none;
+}
+
+/* The node card */
+.tree-node {
+  display: inline-block;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #fff;
+  font-size: 0.82rem;
+  min-width: 140px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s;
+}
+
+.tree-node:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.tree-node.processed {
+  border-color: #28a745;
+  background-color: #f0fff4;
+}
+
+.tree-node.unprocessed {
+  border-color: #ffc107;
+  background-color: #fffdf0;
+}
+
+.tree-node .node-name {
+  font-weight: 600;
+  color: #212529;
+  word-break: break-word;
+}
+
+.tree-node .node-weight {
+  color: #6c757d;
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+
+.tree-node .node-badge {
+  font-size: 0.72rem;
+  margin-top: 5px;
+}
