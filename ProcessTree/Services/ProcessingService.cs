@@ -66,11 +66,11 @@ namespace ProcessTree.Services
             {
                 var child = new ProcessItem
                 {
-                    Name = $"{parent.Name} — Output {i + 1}",
+                    Name = $"Output {i + 1}",
+                    Notes = $"From: {parent.Name}",
                     Weight = weights[i],
                     ParentId = parent.Id,
                     IsProcessed = false,
-                    Notes = $"Generated from '{parent.Name}'"
                 };
                 children.Add(child);
             }

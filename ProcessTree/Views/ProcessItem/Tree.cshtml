@@ -6,64 +6,182 @@
 
 <link rel="stylesheet" href="~/css/tree.css" />
 
-<div class="container-fluid mt-4">
-
-    <div class="d-flex justify-content-between align-items-center mb-3 px-3">
-        <h2>🌲 Tree: <em>@Model.Name</em></h2>
+<div class="container-fluid mt-3 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">🌲 Tree: <strong>@Model.Name</strong></h4>
         <div class="d-flex gap-2">
             @if (!Model.IsProcessed)
             {
-                <a asp-action="Process" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-primary">▶ Process Root</a>
+                <a asp-action="Process" asp-route-id="@Model.Id"
+                   class="btn btn-sm btn-outline-primary">▶ Process Root</a>
             }
-            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-secondary">Details</a>
-            <a asp-action="Index" class="btn btn-sm btn-outline-secondary">← Back</a>
+            <a asp-action="Details" asp-route-id="@Model.Id"
+               class="btn btn-sm btn-outline-secondary">Details</a>
+            <a asp-action="Index"
+               class="btn btn-sm btn-outline-secondary">← Back</a>
         </div>
     </div>
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success mx-3 alert-dismissible fade show">
+        <div class="alert alert-success alert-dismissible fade show">
             @TempData["Success"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
-    <div class="card shadow-sm mx-3">
-        <div class="card-body tree-wrapper">
-            <div class="tree">
-                @await Html.PartialAsync("_TreeNode", Model)
+    <div class="card shadow-sm">
+        <div class="card-body p-2">
+            <div class="tree-page-wrapper">
+                <div id="tree-svg-container">
+                    <svg id="tree-svg-lines"></svg>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="mx-3 mt-3">
+    <div class="mt-2">
         <small class="text-muted">
-            <span class="me-3">🟩 Green border = Processed</span>
-            <span>🟨 Yellow border = Unprocessed — click ▶ to process further</span>
+            <span class="me-3">🟩 Green = Processed</span>
+            <span>🟨 Yellow = Unprocessed — click ▶ Process to go deeper</span>
         </small>
     </div>
-
 </div>
-```
 
----
+@section Scripts {
+<script>
+    // Serialize model from Razor to JS
+    const treeData = @Html.Raw(
+        System.Text.Json.JsonSerializer.Serialize(Model, 
+        new System.Text.Json.JsonSerializerOptions 
+        { 
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase 
+        })
+    );
 
-### Build & Test
+    const CARD_W = 150;
+    const CARD_H = 100;
+    const H_GAP = 30;   // horizontal gap between sibling cards
+    const V_GAP = 70;   // vertical gap between levels
 
-**Ctrl + Shift + B** → **▶ https**
+    // Step 1: assign subtree widths to each node
+    function assignWidths(node) {
+        if (!node.children || node.children.length === 0) {
+            node._width = CARD_W;
+            return;
+        }
+        node.children.forEach(assignWidths);
+        const totalChildren = node.children.reduce(
+            (sum, c) => sum + c._width, 0
+        ) + H_GAP * (node.children.length - 1);
+        node._width = Math.max(CARD_W, totalChildren);
+    }
 
-Now click the 🌲 Tree button on any item — you should see the tree with nodes and connector lines.
+    // Step 2: assign absolute x, y positions
+    function assignPositions(node, x, y) {
+        node._x = x + (node._width - CARD_W) / 2;
+        node._y = y;
 
-Try this flow to really test it:
-```
-1. Create a new item (e.g., "Steel Batch", 300 kg)
-2. Click ▶ Process (split into 3 equal outputs)
-3. Click 🌲 Tree (see the tree with 3 children)
-4. Click ▶ Process on one child (go deeper)
-5. Click 🌲 Tree again (see 2-level tree)
-```
+        if (!node.children || node.children.length === 0) return;
 
----
+        // distribute children evenly
+        const totalChildrenWidth = node.children.reduce(
+            (sum, c) => sum + c._width, 0
+        ) + H_GAP * (node.children.length - 1);
 
-### Git Commit #7
-```
+        let childX = x + (node._width - totalChildrenWidth) / 2;
+        node.children.forEach(child => {
+            assignPositions(child, childX, y + CARD_H + V_GAP);
+            childX += child._width + H_GAP;
+        });
+    }
+
+    // Step 3: collect all nodes flat
+    function collectNodes(node, list = []) {
+        list.push(node);
+        if (node.children) node.children.forEach(c => collectNodes(c, list));
+        return list;
+    }
+
+    // Step 4: collect all edges
+    function collectEdges(node, edges = []) {
+        if (node.children) {
+            node.children.forEach(child => {
+                edges.push({ parent: node, child });
+                collectEdges(child, edges);
+            });
+        }
+        return edges;
+    }
+
+    // Step 5: render everything
+    function render() {
+        assignWidths(treeData);
+        assignPositions(treeData, 0, 0);
+
+        const allNodes = collectNodes(treeData);
+        const allEdges = collectEdges(treeData);
+
+        // calculate canvas size
+        const maxX = Math.max(...allNodes.map(n => n._x + CARD_W));
+        const maxY = Math.max(...allNodes.map(n => n._y + CARD_H));
+        const canvasW = maxX + 20;
+        const canvasH = maxY + 20;
+
+        const container = document.getElementById('tree-svg-container');
+        container.style.width  = canvasW + 'px';
+        container.style.height = canvasH + 'px';
+
+        // SVG lines
+        const svg = document.getElementById('tree-svg-lines');
+        svg.setAttribute('width', canvasW);
+        svg.setAttribute('height', canvasH);
+        svg.innerHTML = '';
+
+        allEdges.forEach(({ parent, child }) => {
+            const x1 = parent._x + CARD_W / 2;
+            const y1 = parent._y + CARD_H;
+            const x2 = child._x  + CARD_W / 2;
+            const y2 = child._y;
+            const midY = (y1 + y2) / 2;
+
+            const path = document.createElementNS(
+                'http://www.w3.org/2000/svg', 'path'
+            );
+            // smooth bezier curve connector
+            path.setAttribute('d',
+                `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`
+            );
+            path.setAttribute('class', 'tree-edge');
+            svg.appendChild(path);
+        });
+
+        // Render node cards
+        allNodes.forEach(node => {
+            const card = document.createElement('div');
+            card.className = 'tree-card ' + 
+                (node.isProcessed ? 'processed' : 'unprocessed');
+            card.style.left = node._x + 'px';
+            card.style.top  = node._y + 'px';
+
+            const fromNote = node.notes && node.notes.startsWith('From:')
+                ? `<div class="card-from">${node.notes}</div>` : '';
+
+            const badge = node.isProcessed
+                ? `<span>✓ Done</span>`
+                : `<a href="/ProcessItem/Process/${node.id}">▶ Process</a>`;
+
+            card.innerHTML = `
+                <div class="card-label">${node.name}</div>
+                ${fromNote}
+                <div class="card-weight">⚖ ${node.weight.toFixed(2)} kg</div>
+                <div class="card-badge">${badge}</div>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    render();
+</script>
+}
