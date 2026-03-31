@@ -54,7 +54,7 @@ namespace ProcessTree.Controllers
             return View(item);
         }
 
-        // GET: /ProcessItem/Process/5
+        // GET: /ProcessItem/Process/5  (kept for direct-link / Details page access)
         public async Task<IActionResult> Process(int id)
         {
             var item = await _service.GetItemWithChildrenAsync(id);
@@ -79,7 +79,7 @@ namespace ProcessTree.Controllers
             return View(vm);
         }
 
-        // POST: /ProcessItem/Process
+        // POST: /ProcessItem/Process  (kept for the standalone Process page)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Process(ProcessActionViewModel model)
@@ -95,13 +95,11 @@ namespace ProcessTree.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                // Business rule violations — show directly to user
                 TempData["Error"] = ex.Message;
                 return RedirectToAction(nameof(Process), new { id = model.ItemId });
             }
             catch (ArgumentException ex)
             {
-                // Validation errors — show on form
                 ModelState.AddModelError("", ex.Message);
                 return View(model);
             }
@@ -110,6 +108,51 @@ namespace ProcessTree.Controllers
                 _logger.LogError(ex, "Unexpected error during processing");
                 TempData["Error"] = "An unexpected error occurred. Please try again.";
                 return RedirectToAction(nameof(Details), new { id = model.ItemId });
+            }
+        }
+
+        // POST: /ProcessItem/ProcessAjax  — called by the inline Tree modal
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProcessAjax(ProcessActionViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage);
+                return BadRequest(new { error = string.Join(" ", errors) });
+            }
+
+            try
+            {
+                var outputs = await _service.ProcessItemAsync(model);
+
+                return Ok(new
+                {
+                    parentId = model.ItemId,
+                    outputs = outputs.Select(o => new
+                    {
+                        o.Id,
+                        o.Name,
+                        o.Weight,
+                        o.IsProcessed,
+                        o.Notes
+                    })
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in ProcessAjax");
+                return StatusCode(500, new { error = "An unexpected error occurred." });
             }
         }
 
